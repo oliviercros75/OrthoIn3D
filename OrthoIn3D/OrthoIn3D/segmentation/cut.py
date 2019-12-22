@@ -57,7 +57,7 @@ def get_plane(verts,curvs,threshold=-0.3):
     
     return barycentre,U[:,-1]
 
-def cut(polydata, shift=5.5):
+def cut(polydata, shift=8.0): #5.5):
     """
     Cut the jaw just under the teeth to reduce the number of vertices.
     May rotate it.
