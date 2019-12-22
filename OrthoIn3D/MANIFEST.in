@@ -1,0 +1,3 @@
+include README.rst
+include OrthoIn3D/data/data_input
+include OrthoIn3D/data/data_output
