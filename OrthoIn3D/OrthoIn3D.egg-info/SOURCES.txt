@@ -4,15 +4,14 @@ setup.py
 OrthoIn3D/__init__.py
 OrthoIn3D/command_line.py
 OrthoIn3D/main.py
+OrthoIn3D/minimalGUI.py
 OrthoIn3D.egg-info/PKG-INFO
 OrthoIn3D.egg-info/SOURCES.txt
 OrthoIn3D.egg-info/dependency_links.txt
 OrthoIn3D.egg-info/not-zip-safe
 OrthoIn3D.egg-info/requires.txt
 OrthoIn3D.egg-info/top_level.txt
-OrthoIn3D/registration/__init__.py
 OrthoIn3D/registration/mesh_registration.py
-OrthoIn3D/segmentation/__init__.py
 OrthoIn3D/segmentation/cut.py
 OrthoIn3D/segmentation/field.py
 OrthoIn3D/segmentation/viewer.py

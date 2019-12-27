@@ -7,6 +7,7 @@ from .segmentation.cut import cut
 
 from .segmentation.field import add_brush
 from .segmentation.field import add_field
+from .segmentation.field import add_field_gui
 from .segmentation.field import mean_vertex
 from .segmentation.field import veclen
 from .segmentation.field import compute_laplacian
@@ -19,9 +20,13 @@ from .segmentation.field import dist_poly2point
 from .segmentation.field import save_stl
 
 from .segmentation.viewer import get_cusps
+from .segmentation.viewer import get_cusps_gui
 from .segmentation.viewer import show_field
+from .segmentation.viewer import show_field_gui
 from .segmentation.viewer import select_spline
+from .segmentation.viewer import select_spline_gui
+
 
 
 def show_version():
-    print('Version: 0.1')
+    print('Version: 0.2')

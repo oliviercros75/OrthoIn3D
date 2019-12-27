@@ -49,12 +49,14 @@ def main():
     
     print("STL file is now loaded")
 
-    polydata = prepare_polydata(reader)
+    dummy, polydata = prepare_polydata(reader)
     full_jaw_polydata = polydata
-    cutted_polydata, gencives = cut(polydata, shift=5.5)
+    cutted_polydata, gencives = cut(polydata, shift=5)
 
     #clicked_0,clicked_1 = get_cusps(self, cutted_polydata)
     clicked_0,clicked_1 = get_cusps(cutted_polydata)
+    
+    print("Here now")
 
     cusps_0 = add_brush(cutted_polydata, clicked_0, radius=0.5)
     cusps_1 = add_brush(cutted_polydata, clicked_1, radius=0.5)

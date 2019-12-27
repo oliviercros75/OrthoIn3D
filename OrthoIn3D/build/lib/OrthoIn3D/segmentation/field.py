@@ -13,7 +13,7 @@ import vtk
 from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.util import numpy_support as nps
 
-def add_brush(polydata,clicked, radius = 0.5):
+def add_brush(polydata, clicked, radius = 1.2):
     """
     Return the points within the spheres of radius=radius and of center the clicked's points
     """
@@ -37,6 +37,17 @@ def add_brush(polydata,clicked, radius = 0.5):
     return cusps
 
 def add_field(polydata,field,name=None):
+    """
+    Add a numpy field to a VTK polydata.
+    Return the polydata with the field.
+    """
+    vtk_field = nps.numpy_to_vtk(field)
+    if name:
+        vtk_field.SetName(name)
+    polydata.GetOutput().GetPointData().SetScalars(vtk_field)
+    return polydata
+
+def add_field_gui(self, polydata, field, name=None):
     """
     Add a numpy field to a VTK polydata.
     Return the polydata with the field.
@@ -115,6 +126,60 @@ def scipy_splu(A,b):
     K = linalg.splu(A)
     return K.solve(b)
 
+def compute_field_gui(self, cusps_0, cusps_1, gencives, polydata, old_field=[]):
+    """
+    Compute the Harmonic Field
+    cusps_0: numpy array of points' index that have the 0 value, blue teeth
+    cusps_1: numpy array of points' index that have the 1 value, orange teeth
+    gencives: numpy array of points' index that have the 0.5 value, correspond to the gingiva
+    polydata: the teeth polydata
+    old_field: (N x 1) the old field if you have to recompute it after adding a point to cusps_0, cusps_1 or gencives
+    """
+    np_mesh = dsa.WrapDataObject(self.polydata.GetOutput())
+
+    verts = np_mesh.GetPoints()
+    polys = np_mesh.GetPolygons()
+    polys = polys.reshape((-1,4))[:,1:]
+    curvs = nps.vtk_to_numpy(self.polydata.GetOutput().GetPointData().GetArray("Mean_Curvature"))
+
+    fL = 1. #convex weights
+    fS = 0.001  #concav weights
+    const = -0.2 # The constant to see if an area is concav or not, usuallt -0.2
+    
+    mean_vertex_coef=3
+    
+    curvs = mean_vertex(curvs, polys, mean_vertex_coef) #Gaussian mean to reduce isolated points
+    concav = curvs < const
+
+    L = compute_laplacian(verts,polys,concav,fS,fL)
+
+    cusps = self.cusps_0 + self.cusps_1
+    n=len(cusps)+len(self.gencives)
+    m=len(verts)
+    
+    w=1000 #constraint on the selected points
+    
+    J=cusps + self.gencives
+    C_ij = [w]*n
+    C = sparse.csr_matrix((C_ij, (J, J)), shape=(m, m))
+    M = (L+C).tocsc()
+    
+    b = np.zeros(m)
+    #b[cusps_0] += [0*w]*len(cusps_1) #Inutile ;)
+    b[self.cusps_1] += [1*w]*len(self.cusps_1)
+    b[self.gencives] += [0.5*w]*len(self.gencives)
+    
+    if self.old_field == []:
+        self.old_field = np.zeros(m)
+    r = b - M * self.old_field
+
+    field = self.old_field + scipy_splu(M, r)
+    
+    #Pour afficher un joli champ décommenter
+    self.field = 1*((self.field>0.7).astype(np.int8) - (self.field<0.3).astype(np.int8))
+    self.field = self.field.astype(np.int8)
+    return self.field
+
 def compute_field(cusps_0, cusps_1, gencives, polydata, old_field=[]):
     """
     Compute the Harmonic Field
@@ -135,8 +200,9 @@ def compute_field(cusps_0, cusps_1, gencives, polydata, old_field=[]):
     fS = 0.001  #concav weights
     const = -0.2 # The constant to see if an area is concav or not, usuallt -0.2
     
-    curvs = mean_vertex(curvs, polys, coef=3) #Gaussian mean to reduce isolated points
-    concav = curvs<const
+    mean_vertex_coef=3
+    curvs = mean_vertex(curvs, polys, mean_vertex_coef) #Gaussian mean to reduce isolated points
+    concav = curvs < const
 
     L = compute_laplacian(verts,polys,concav,fS,fL)
 
@@ -315,7 +381,7 @@ def save_stl(polydata,splines_polydata,clicked_0,clicked_1):
 
     for i,poly in enumerate(selected_polydata):
         if poly.GetNumberOfPoints() == 0:
-            print("erreur ",i)
+            print("error ",i)
             
             centerOfMassFilter = vtk.vtkCenterOfMass()
             centerOfMassFilter.SetInputData(selected_spline[i])
@@ -357,7 +423,7 @@ def save_stl(polydata,splines_polydata,clicked_0,clicked_1):
         nearest = np.argmin(distance)
 
         writer = vtk.vtkSTLWriter()
-        writer.SetFileName('./stl_seg/teeth_{}.stl'.format(2*i))
+        writer.SetFileName('./data/data_output/teeth_{}.stl'.format(2*i))
         writer.SetInputData(selected_polydata[nearest])
         writer.Write()
         
@@ -371,7 +437,7 @@ def save_stl(polydata,splines_polydata,clicked_0,clicked_1):
 
         
         writer = vtk.vtkSTLWriter()
-        writer.SetFileName('./stl_seg/teeth_{}.stl'.format(2*i+1))
+        writer.SetFileName('./data/data_output/teeth_{}.stl'.format(2*i+1))
         writer.SetInputData(selected_polydata[nearest])
         writer.Write()
         
@@ -390,7 +456,7 @@ def save_stl(polydata,splines_polydata,clicked_0,clicked_1):
     gengiva.Update()
     
     writer = vtk.vtkSTLWriter()
-    writer.SetFileName('./stl_seg/gengiva.stl')
+    writer.SetFileName('./data/data_output/gengiva.stl')
     writer.SetInputConnection(gengiva.GetOutputPort())
     writer.Write()
     

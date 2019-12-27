@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='OrthoIn3D',
-      version='0.1',
+      version='0.2',
       description='To align teeth',
       url='https://github.com/Oliviercros75/ORTHOIN3D/OrthoIn3D',
       author='Olivier Cros',
