@@ -152,6 +152,7 @@ class Ui_MainWindow(object):
             self.statusBar().hide()
         print(state)
 
+
 class SettingsWindow(QWidget):
     def __init__(self):
         QWidget.__init__(self)
@@ -472,6 +473,7 @@ class SettingsWindow(QWidget):
         else:
             print('Unchecked')
         
+
 class SimpleView(QMainWindow):
     def __init__(self, parent = None):
         QMainWindow.__init__(self, parent)
@@ -479,7 +481,7 @@ class SimpleView(QMainWindow):
         self.ui.setupUi(self)
         
         print("Filename is: " + self.ui.filename)
-
+        
         self.ren = vtk.vtkRenderer()
         self.ui.vtkWidget.GetRenderWindow().AddRenderer(self.ren)
         self.iren = self.ui.vtkWidget.GetRenderWindow().GetInteractor()
@@ -497,15 +499,16 @@ class SimpleView(QMainWindow):
                           'missingTeethMandi' : [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                           'missingTeethMaxi' : [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
                           'inclusionSphereDiamMandi' : [8,8,7,7,6,5,3,2,2,3,5,6,7,7,8,8],
-                          'inclusionSphereDiamMaxi' : [8,8,7,7,6,5,3,2,2,3,5,6,7,7,8,8]
+                          'inclusionSphereDiamMaxi' : [8,8,7,7,6,5,3,2,2,3,5,6,7,7,8,8],
+                     'pickedPoints': {}
                          }
         orthonIn3D_data = json.dumps(data_dict)
         with open('./patientA.json', 'w') as j_file:
             json.dump(orthonIn3D_data, j_file)
         # Pretty Printing JSON string back
-        print(json.dumps(orthonIn3D_data, indent = 4, sort_keys=True))
+        #print(json.dumps(orthonIn3D_data, indent = 4, sort_keys=True))
         
-        prepare_jaw(self, self.ui.filename)
+        prepare_jaw(self, self.ui.filename, data_dict)
         
         
         self.txt = vtk.vtkTextActor()
@@ -557,7 +560,112 @@ class SimpleView(QMainWindow):
         self.iren.AddObserver("KeyPressEvent", key_pressed_callback)
         #self.ren.AddActor(actor)
 
-def prepare_jaw(self, fname):
+def pickedSphereBounds(self):
+    allActors = window.ren.GetActors()
+    allActors.InitTraversal()
+    num_items = allActors.GetNumberOfItems()
+    boundsPickedSpheres = {}
+    for i in range(num_items):
+        bounds = [0]*6
+        currentActor = allActors.GetNextActor() 
+        currentActor.GetBounds(bounds)
+        print(bounds)
+        boundsPickedSpheres.append({i : [bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5]]})
+    return boundsPickedSpheres
+
+
+        
+def hidePickedSphere(self):
+    
+    print("Hiding the green spheres")    
+    # reset actor colors
+    actorCollection = window.ren.GetActors()
+    actorCollection.InitTraversal()
+
+    cactor = actorCollection.GetNextActor() # first actor
+    while cactor != actorCollection.GetLastActor():
+        #print("going through objects")
+        currentActorColor = cactor.GetProperty().GetColor()
+        if ((currentActorColor[0]==0) and
+            (currentActorColor[1]==1) and
+            (currentActorColor[0]==0)):
+            cactor.GetProperty().SetOpacity(0.0)
+        cactor = actorCollection.GetNextActor()
+    # Last actor
+    currentActorColor = cactor.GetProperty().GetColor()
+    if ((currentActorColor[0]==0) and
+        (currentActorColor[1]==1) and
+        (currentActorColor[0]==0)):
+        cactor.GetProperty().SetOpacity(0.0)
+
+def displayPickedSphere(self):
+    print("Displaying the green spheres")
+    actorCollection = window.ren.GetActors()
+    actorCollection.InitTraversal()
+
+    cactor = actorCollection.GetNextActor() # first actor
+    while cactor != actorCollection.GetLastActor():
+        #print("going through objects")
+        currentActorColor = cactor.GetProperty().GetColor()
+        if ((currentActorColor[0]==0) and
+            (currentActorColor[1]==1) and
+            (currentActorColor[0]==0)):
+            cactor.GetProperty().SetOpacity(1.0)
+            #cactor.GetProperty().SetColor(1,1,0)
+        cactor = actorCollection.GetNextActor()
+    # Last actor
+    currentActorColor = cactor.GetProperty().GetColor()
+    if ((currentActorColor[0]==0) and
+        (currentActorColor[1]==1) and
+        (currentActorColor[0]==0)):
+        cactor.GetProperty().SetOpacity(1.0)
+        #cactor.GetProperty().SetColor(1,1,0)
+
+def changePickedSphereColor(self, color_name):
+    
+    print("changing the colour of the spheres")
+    if color_name is None:
+        color_to_apply = (0.0, 1.0, 0.0)
+    if (color_name == 'red'):
+        color_to_apply = (1.0, 0.0, 0.0)
+    elif (color_name == 'blue'):
+        color_to_apply = (0.0, 1.0, 0.0)
+    elif (color_name == 'yellow'):
+        color_to_apply = (1.0, 1.0, 0.0)
+    elif (color_name == 'cyan'):
+        color_to_apply = (0.0, 1.0, 1.0)
+    elif (color_name == 'magenta'):
+        color_to_apply = (1.0, 0.0, 0.0)
+    elif (color_name == 'orange'):
+        color_to_apply = (1.0, 0.65, 0.0)    
+    elif (color_name == 'white'):
+        color_to_apply = (1.0, 1.0, 1.0)
+    else:
+        color_to_apply = (0.0, 1.0, 0.0)
+        
+    actorCollection = window.ren.GetActors()
+    actorCollection.InitTraversal()
+
+    cactor = actorCollection.GetNextActor() # first actor
+    while cactor != actorCollection.GetLastActor():
+        #print("going through objects")
+        currentActorColor = cactor.GetProperty().GetColor()
+        if ((currentActorColor[0]==0) and
+            (currentActorColor[1]==1) and
+            (currentActorColor[0]==0)):
+            cactor.GetProperty().SetOpacity(1.0)
+            cactor.GetProperty().SetColor(color_to_apply[0],color_to_apply[1],color_to_apply[2])
+        cactor = actorCollection.GetNextActor()
+    # Last actor
+    currentActorColor = cactor.GetProperty().GetColor()
+    if ((currentActorColor[0]==0) and
+        (currentActorColor[1]==1) and
+        (currentActorColor[0]==0)):
+        cactor.GetProperty().SetOpacity(1.0)
+        cactor.GetProperty().SetColor(color_to_apply[0],color_to_apply[1],color_to_apply[2])
+        
+
+def prepare_jaw(self, fname, tdict):
     print("Loading STL files")
      
     reader = vtk.vtkSTLReader()
@@ -570,19 +678,18 @@ def prepare_jaw(self, fname):
     self.shift=5
     self.reduced_polydata, self.gingiva = cut(self.polydata, self.shift)
 
-    with open('./patientA.json','r') as f:
-        data = json.load(f)
+    self.clicked_0, self.clicked_1, update_data_dict = get_cusps_gui(self.ren, self.iren, self.reduced_polydata, tdict)
     
-    
-    self.clicked_0, self.clicked_1, coords_dict, radius_dict, toothnb_dict = get_cusps_gui(self.ren, self.iren, self.reduced_polydata)
-    
-    #data.update(pickedPoint_dict)
-    #with open('./patientA.json', 'w') as f:
-    #    json.dump(data, f)
+    orthonIn3D_updated_data = json.dumps(update_data_dict)
+    with open('./patientA.json', 'w') as j_file:
+            json.dump(orthonIn3D_updated_data, j_file)
+    # Pretty Printing JSON string back
+    #print(json.dumps(orthonIn3D_updated_data, indent = 4, sort_keys=True))
 
+    #print(tdict["pickedPoints"]["2"]["Coords"][2])
     
 def compute_harmonic_field(self):
-
+    
     print("Computing the harmonic field")
 
     window.radius=0.5
@@ -605,6 +712,9 @@ def compute_harmonic_field(self):
     window.ui.computeButton.hide()
     window.ui.showFieldButton.show()
     
+    hidePickedSphere(self)
+    #displayPickedSphere(self)
+    #changePickedSphereColor(self, 'orange')
     
 def show_harmonic_field(self):
     print("Visualize the harmonic field")

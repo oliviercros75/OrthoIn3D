@@ -29,4 +29,4 @@ from .segmentation.viewer import select_spline_gui
 
 
 def show_version():
-    print('Version: 0.2')
+    print('Version: 0.3.3')

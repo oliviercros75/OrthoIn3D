@@ -7,9 +7,15 @@ To install:
 2) run the follwing command: python -m pip install e .
 3) then run the following command: python setup.py sdist bdist_wheel
 
+
+
 To launch the main script:
 
-1) python main.py 
+1) python main.py # for the original version
+or 
+1) python minimalGUI.py
+
+
 
 To commit the work done on github:
 

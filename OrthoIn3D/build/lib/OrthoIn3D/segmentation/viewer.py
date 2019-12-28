@@ -7,9 +7,10 @@ Created on 2 déc. 2018
 
 import vtk
 
-def get_cusps_gui(ren, inter, polydata):
+def get_cusps_gui(ren, inter, polydata, thedict):
     global renderer
     global interactor
+    
     """
     Allow to pick the cusps of each tooth
     Return two lists, each is a list of points where the field must be 0 or 1
@@ -19,6 +20,9 @@ def get_cusps_gui(ren, inter, polydata):
     clicked_0 = []
     clicked_1 = []
 
+    global pindx
+    pindx = 0
+    
     global picker
     picker = vtk.vtkCellPicker()
 
@@ -30,8 +34,12 @@ def get_cusps_gui(ren, inter, polydata):
     radius_dict ={}
     toothnb_dict = {}
     
+    
     def annotatePick(object, event):
         global render
+        global pindx
+        global teeth_dict
+        teeth_dict = {}
         #x, y = inter.GetEventPosition()
         #picker.Pick(x, y, 0, ren)
         #vid =  picker.GetCellId()
@@ -45,9 +53,23 @@ def get_cusps_gui(ren, inter, polydata):
             coords_dict = {'coords': [pickPos[0], pickPos[1], pickPos[2]]}
             radius_dict = {'radius': sphereRadius}
             toothnb_dict ={'tooth_number': -1}
-            print(coords_dict)
-            print(radius_dict)
-            print(toothnb_dict)
+            toothDiamSphere_dict = {'diamSphere': -1}
+            
+            teethDictKeyStr = str(pindx)
+            tooth_dict = { teethDictKeyStr : coords_dict}
+            tooth_dict[teethDictKeyStr].update(radius_dict)
+            tooth_dict[teethDictKeyStr].update(toothDiamSphere_dict)
+            teeth_dict.update(tooth_dict)
+            thedict["pickedPoints"].update(teeth_dict)
+                              
+            #print("Content of data_dict : ")
+            #for (key, value) in thedict.items() :
+            #    print(key , " :: ", value )
+                           
+            #print(coords_dict)
+            #print(radius_dict)
+            #print(toothnb_dict)
+            print(pindx)
             #data_dict.append(coords_dict)
             #data_dict.append(radius_dict)
             #data_dict.append(toothnb_dict)
@@ -63,26 +85,25 @@ def get_cusps_gui(ren, inter, polydata):
             sphere.SetCenter(pickPos[0], pickPos[1], pickPos[2])
             pickingSphereCoords.append(pickPos)
         
+            #sphereActorname = 'marker' + str(pindx)
+            #vars()[sphereActorname] = vtk.vtkActor()
             marker = vtk.vtkActor()
             marker.SetMapper(mapper)
             marker.GetProperty().SetColor( (0,1,0) )
             marker.VisibilityOn()
             ren.AddActor(marker)
             
-
             if oscillation[0]:
                 clicked = clicked_0
             else:
                 clicked = clicked_1
             oscillation[0] = not oscillation[0]
             clicked.append(point)
-            
+            pindx +=1
 
     picker.AddObserver("EndPickEvent", annotatePick) 
     #picker.RemoveObservers("EndPickEvent") 
-        
     
-    print("point picked")
     mapper = vtk.vtkPolyDataMapper()
     mapper.SetInputConnection(polydata.GetOutputPort())
     mapper.ScalarVisibilityOff()
@@ -108,7 +129,9 @@ def get_cusps_gui(ren, inter, polydata):
     
     #close_window(iren)
     
-    return clicked_0,clicked_1, coords_dict, radius_dict, toothnb_dict
+    
+    
+    return clicked_0,clicked_1, thedict
 
 def close_window(iren):
     render_window = iren.GetRenderWindow()
