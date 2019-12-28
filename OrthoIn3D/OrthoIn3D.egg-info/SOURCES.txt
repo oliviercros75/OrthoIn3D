@@ -6,6 +6,7 @@ OrthoIn3D/cellPicking_demo.py
 OrthoIn3D/command_line.py
 OrthoIn3D/main.py
 OrthoIn3D/minimalGUI.py
+OrthoIn3D/testJson.py
 OrthoIn3D.egg-info/PKG-INFO
 OrthoIn3D.egg-info/SOURCES.txt
 OrthoIn3D.egg-info/dependency_links.txt
