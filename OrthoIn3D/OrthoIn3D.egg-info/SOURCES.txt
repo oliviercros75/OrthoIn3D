@@ -2,6 +2,7 @@ MANIFEST.in
 README.rst
 setup.py
 OrthoIn3D/__init__.py
+OrthoIn3D/cellPicking_demo.py
 OrthoIn3D/command_line.py
 OrthoIn3D/main.py
 OrthoIn3D/minimalGUI.py

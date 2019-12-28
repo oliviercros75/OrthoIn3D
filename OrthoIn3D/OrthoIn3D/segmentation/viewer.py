@@ -23,48 +23,64 @@ def get_cusps_gui(ren, inter, polydata):
     picker = vtk.vtkCellPicker()
 
     oscillation = [False]
-
+    pickingSphereCoords = []
     #self.iren.SetPicker(self.picker)
-
-    def mark(x,y,z):
-        """mark the picked location with a sphere"""
-        sphere = vtk.vtkSphereSource()
-        sphere.SetRadius(10)
-        res = 20
-        sphere.SetThetaResolution(res)
-        sphere.SetPhiResolution(res)
-        sphere.SetCenter(x,y,z)
-        mapper = vtk.vtkPolyDataMapper()
-        mapper.SetInput(sphere.GetOutput())
-
-        marker = vtk.vtkActor()
-        marker.SetMapper(mapper)
-        marker.GetProperty().SetColor( (1,0,0) )
-        ren.AddActor(marker)
-        
-        #inter.Render()
+    
+    coords_dict = {}
+    radius_dict ={}
+    toothnb_dict = {}
     
     def annotatePick(object, event):
+        global render
         #x, y = inter.GetEventPosition()
         #picker.Pick(x, y, 0, ren)
         #vid =  picker.GetCellId()
         if picker.GetCellId() >= 0:
             point = picker.GetPointId()
-            #pcoords = picker.GetPCoords()
-            #sid = picker.GetSubId()
-            #dataSet = picker.GetDataSet()
-            #pnt = dataSet.GetPoint(vid)
-            #mark(*pnt)
-            print("Point:" + str(point))
+            pickPos = picker.GetPickPosition()
+            selPt = picker.GetSelectionPoint()
+            #print("Point:" + str(point) + ", pickPos=" + str(pickPos) + ", selPt=" + str(selPt))
+            sphereRadius = 1
+            
+            coords_dict = {'coords': [pickPos[0], pickPos[1], pickPos[2]]}
+            radius_dict = {'radius': sphereRadius}
+            toothnb_dict ={'tooth_number': -1}
+            print(coords_dict)
+            print(radius_dict)
+            print(toothnb_dict)
+            #data_dict.append(coords_dict)
+            #data_dict.append(radius_dict)
+            #data_dict.append(toothnb_dict)
+            
+            sphere = vtk.vtkSphereSource()
+            sphere.SetRadius(sphereRadius)
+            res = 20
+            sphere.SetThetaResolution(res)
+            sphere.SetPhiResolution(res)
+            mapper = vtk.vtkPolyDataMapper()
+            mapper.SetInputConnection(sphere.GetOutputPort())
+        
+            sphere.SetCenter(pickPos[0], pickPos[1], pickPos[2])
+            pickingSphereCoords.append(pickPos)
+        
+            marker = vtk.vtkActor()
+            marker.SetMapper(mapper)
+            marker.GetProperty().SetColor( (0,1,0) )
+            marker.VisibilityOn()
+            ren.AddActor(marker)
+            
+
             if oscillation[0]:
                 clicked = clicked_0
             else:
                 clicked = clicked_1
             oscillation[0] = not oscillation[0]
             clicked.append(point)
+            
 
     picker.AddObserver("EndPickEvent", annotatePick) 
     #picker.RemoveObservers("EndPickEvent") 
+        
     
     print("point picked")
     mapper = vtk.vtkPolyDataMapper()
@@ -92,7 +108,7 @@ def get_cusps_gui(ren, inter, polydata):
     
     #close_window(iren)
     
-    return clicked_0,clicked_1
+    return clicked_0,clicked_1, coords_dict, radius_dict, toothnb_dict
 
 def close_window(iren):
     render_window = iren.GetRenderWindow()
@@ -120,7 +136,9 @@ def get_cusps(polydata):
     def annotatePick(object, event):
         if picker.GetCellId() >= 0:
             point = picker.GetPointId()
-            print("Point:" + str(point))
+            pickPos = picker.GetPickPosition()
+            selPt = picker.GetSelectionPoint()
+            print("Point:" + str(point) + ", pickPos=" + str(pickPos) + ", selPt=" + str(selPt))
             if oscillation[0]:
                 clicked = clicked_0
             else:
@@ -210,7 +228,7 @@ def show_field_gui(renderer, polydata, add_iso=False):
     renderer.AddActor(actor_field)
     if add_iso:
         renderer.AddActor(actor_iso)
-    renderer.AddActor(scalarBar)
+    #renderer.AddActor(scalarBar)
     
     
 def show_field(polydata, add_iso=False):

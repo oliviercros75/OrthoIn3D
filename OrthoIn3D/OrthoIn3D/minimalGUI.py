@@ -488,10 +488,10 @@ class SimpleView(QMainWindow):
         self.ui.filename = '/Users/ocros/Documents/OrthoIn3D/OrthoIn3D/OrthoIn3D/data/data_input/6000_2017-02-03_13-14_Mandibular_export.stl'
         print("Filename is: " + self.ui.filename)
         
-        json_data_dict = {'patientName': 'Doe',
+        data_dict = {'patientName': 'Doe',
                           'patientSurname': 'John',
-                          'Sex' : 'Male',
-                          'age': 12,
+                          'Sex' : 'None',
+                          'age': 45,
                           'mandi': False,
                           'maxi': False,
                           'missingTeethMandi' : [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -499,11 +499,11 @@ class SimpleView(QMainWindow):
                           'inclusionSphereDiamMandi' : [8,8,7,7,6,5,3,2,2,3,5,6,7,7,8,8],
                           'inclusionSphereDiamMaxi' : [8,8,7,7,6,5,3,2,2,3,5,6,7,7,8,8]
                          }
-        orthonIn3D_data_json = json.dumps(json_data_dict)
-        with open('./patientA.csv', 'w') as json_file:
-            json.dump(orthonIn3D_data_json, json_file)
+        orthonIn3D_data = json.dumps(data_dict)
+        with open('./patientA.json', 'w') as j_file:
+            json.dump(orthonIn3D_data, j_file)
         # Pretty Printing JSON string back
-        print(json.dumps(orthonIn3D_data_json, indent = 4, sort_keys=True))
+        print(json.dumps(orthonIn3D_data, indent = 4, sort_keys=True))
         
         prepare_jaw(self, self.ui.filename)
         
@@ -570,7 +570,15 @@ def prepare_jaw(self, fname):
     self.shift=5
     self.reduced_polydata, self.gingiva = cut(self.polydata, self.shift)
 
-    self.clicked_0, self.clicked_1 = get_cusps_gui(self.ren, self.iren, self.reduced_polydata)
+    with open('./patientA.json','r') as f:
+        data = json.load(f)
+    
+    
+    self.clicked_0, self.clicked_1, coords_dict, radius_dict, toothnb_dict = get_cusps_gui(self.ren, self.iren, self.reduced_polydata)
+    
+    #data.update(pickedPoint_dict)
+    #with open('./patientA.json', 'w') as f:
+    #    json.dump(data, f)
 
     
 def compute_harmonic_field(self):
