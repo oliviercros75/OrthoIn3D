@@ -95,7 +95,7 @@ class Ui_MainWindow(object):
         self.height = MainWindow.frameGeometry().height()
         self.buttpnPosX = math.floor(self.width/2)
         self.buttpnPosY = math.floor(self.height/2)
-        self.xOffset = 320
+        self.xOffset = 370
         self.yOffset = 0
         
         self.computeButton = QPushButton("Compute Harmonic Field")
@@ -103,10 +103,10 @@ class Ui_MainWindow(object):
         self.computeButton.clicked.connect(compute_harmonic_field)
         self.computeButton.show()
         
-        self.showFieldButton = QPushButton("Show Results")
-        self.gridlayout.addWidget(self.showFieldButton, self.buttpnPosX+self.xOffset,self.buttpnPosY+self.yOffset,1,1)
-        self.showFieldButton.clicked.connect(show_harmonic_field)
-        self.showFieldButton.hide()
+        #self.showFieldButton = QPushButton("Show Results")
+        #self.gridlayout.addWidget(self.showFieldButton, #self.buttpnPosX+self.xOffset,self.buttpnPosY+self.yOffset,1,1)
+        #self.showFieldButton.clicked.connect(show_harmonic_field)
+        #self.showFieldButton.hide()
         
         self.editTeethContourButton = QPushButton("Edit Teeth Contour")
         self.gridlayout.addWidget(self.editTeethContourButton, self.buttpnPosX+self.xOffset,self.buttpnPosY+self.yOffset,1,1)
@@ -123,11 +123,18 @@ class Ui_MainWindow(object):
         self.quitFieldButton.clicked.connect(quitApplication)
         self.quitFieldButton.hide()
         
-        self.yOffset = 100
+        self.yOffset = -100
         self.settingsFieldButton = QPushButton("Settings")
         self.gridlayout.addWidget(self.settingsFieldButton, self.buttpnPosX+self.xOffset,self.buttpnPosY+self.yOffset,1,1)
         self.settingsFieldButton.clicked.connect(self.toggleSettingsWindow)
         self.yOffset = 0
+        
+        self.yOffset = 100
+        self.backFieldButton = QPushButton("Back")
+        self.gridlayout.addWidget(self.backFieldButton, self.buttpnPosX+self.xOffset,self.buttpnPosY+self.yOffset,1,1)
+        self.backFieldButton.clicked.connect(goBack)
+        self.yOffset = 0
+        self.backFieldButton.hide()
         
         MainWindow.setCentralWidget(self.centralwidget)
     
@@ -508,8 +515,8 @@ class SimpleView(QMainWindow):
         # Pretty Printing JSON string back
         #print(json.dumps(orthonIn3D_data, indent = 4, sort_keys=True))
         
-        prepare_jaw(self, self.ui.filename, data_dict)
-        
+        prepare_jaw(self, self.ui.filename)
+        pick_the_teeth_on_jaw(self, self.ui, data_dict)
         
         self.txt = vtk.vtkTextActor()
         self.txt.SetInput("1) Click with the mouse on the black screen,")
@@ -574,10 +581,30 @@ def pickedSphereBounds(self):
     return boundsPickedSpheres
 
 
+def hidePickerRedBoundingBox(self):
+    # reset actor colors
+    actorCollection = window.ren.GetActors()
+    actorCollection.InitTraversal()
+
+    cactor = actorCollection.GetNextActor() # first actor
+    while cactor != actorCollection.GetLastActor():
+        #print("going through objects")
+        currentActorColor = cactor.GetProperty().GetColor()
+        if ((currentActorColor[0]==1) and
+            (currentActorColor[1]==0) and
+            (currentActorColor[2]==0)):
+            cactor.GetProperty().SetOpacity(0.0)
+        cactor = actorCollection.GetNextActor()
+     # Last actor
+    currentActorColor = cactor.GetProperty().GetColor()
+    if ((currentActorColor[0]==1) and
+        (currentActorColor[1]==0) and
+        (currentActorColor[2]==0)):
+        cactor.GetProperty().SetOpacity(0.0) 
         
 def hidePickedSphere(self):
     
-    print("Hiding the green spheres")    
+    #print("Hiding the green spheres")    
     # reset actor colors
     actorCollection = window.ren.GetActors()
     actorCollection.InitTraversal()
@@ -588,18 +615,18 @@ def hidePickedSphere(self):
         currentActorColor = cactor.GetProperty().GetColor()
         if ((currentActorColor[0]==0) and
             (currentActorColor[1]==1) and
-            (currentActorColor[0]==0)):
+            (currentActorColor[2]==0)):
             cactor.GetProperty().SetOpacity(0.0)
         cactor = actorCollection.GetNextActor()
     # Last actor
     currentActorColor = cactor.GetProperty().GetColor()
     if ((currentActorColor[0]==0) and
         (currentActorColor[1]==1) and
-        (currentActorColor[0]==0)):
+        (currentActorColor[2]==0)):
         cactor.GetProperty().SetOpacity(0.0)
 
 def displayPickedSphere(self):
-    print("Displaying the green spheres")
+    #print("Displaying the green spheres")
     actorCollection = window.ren.GetActors()
     actorCollection.InitTraversal()
 
@@ -609,7 +636,7 @@ def displayPickedSphere(self):
         currentActorColor = cactor.GetProperty().GetColor()
         if ((currentActorColor[0]==0) and
             (currentActorColor[1]==1) and
-            (currentActorColor[0]==0)):
+            (currentActorColor[2]==0)):
             cactor.GetProperty().SetOpacity(1.0)
             #cactor.GetProperty().SetColor(1,1,0)
         cactor = actorCollection.GetNextActor()
@@ -617,7 +644,7 @@ def displayPickedSphere(self):
     currentActorColor = cactor.GetProperty().GetColor()
     if ((currentActorColor[0]==0) and
         (currentActorColor[1]==1) and
-        (currentActorColor[0]==0)):
+        (currentActorColor[2]==0)):
         cactor.GetProperty().SetOpacity(1.0)
         #cactor.GetProperty().SetColor(1,1,0)
 
@@ -652,7 +679,7 @@ def changePickedSphereColor(self, color_name):
         currentActorColor = cactor.GetProperty().GetColor()
         if ((currentActorColor[0]==0) and
             (currentActorColor[1]==1) and
-            (currentActorColor[0]==0)):
+            (currentActorColor[2]==0)):
             cactor.GetProperty().SetOpacity(1.0)
             cactor.GetProperty().SetColor(color_to_apply[0],color_to_apply[1],color_to_apply[2])
         cactor = actorCollection.GetNextActor()
@@ -660,12 +687,13 @@ def changePickedSphereColor(self, color_name):
     currentActorColor = cactor.GetProperty().GetColor()
     if ((currentActorColor[0]==0) and
         (currentActorColor[1]==1) and
-        (currentActorColor[0]==0)):
+        (currentActorColor[2]==0)):
         cactor.GetProperty().SetOpacity(1.0)
         cactor.GetProperty().SetColor(color_to_apply[0],color_to_apply[1],color_to_apply[2])
         
-
-def prepare_jaw(self, fname, tdict):
+def goBack(self):
+        print("Should go back to former step")
+def prepare_jaw(self, fname):
     print("Loading STL files")
      
     reader = vtk.vtkSTLReader()
@@ -678,6 +706,10 @@ def prepare_jaw(self, fname, tdict):
     self.shift=5
     self.reduced_polydata, self.gingiva = cut(self.polydata, self.shift)
 
+def pick_the_teeth_on_jaw(self, ui, tdict):
+    
+    ui.backFieldButton.hide()
+    
     self.clicked_0, self.clicked_1, update_data_dict = get_cusps_gui(self.ren, self.iren, self.reduced_polydata, tdict)
     
     orthonIn3D_updated_data = json.dumps(update_data_dict)
@@ -689,6 +721,8 @@ def prepare_jaw(self, fname, tdict):
     #print(tdict["pickedPoints"]["2"]["Coords"][2])
     
 def compute_harmonic_field(self):
+    
+    hidePickerRedBoundingBox(self)
     
     print("Computing the harmonic field")
 
@@ -709,12 +743,15 @@ def compute_harmonic_field(self):
     #global field_polydata
     window.field_polydata = add_field(window.reduced_polydata, window.field, name="Harmonic Field")
     
-    window.ui.computeButton.hide()
-    window.ui.showFieldButton.show()
+    #window.ui.computeButton.hide()
+    #window.ui.showFieldButton.show()
+    window.ui.backFieldButton.show()
     
     hidePickedSphere(self)
     #displayPickedSphere(self)
     #changePickedSphereColor(self, 'orange')
+    
+    show_harmonic_field(self)
     
 def show_harmonic_field(self):
     print("Visualize the harmonic field")
@@ -723,7 +760,8 @@ def show_harmonic_field(self):
     
     show_field_gui(window.ren, window.field_polydata, window.add_iso)
     
-    window.ui.showFieldButton.hide()
+    #window.ui.showFieldButton.hide()
+    window.ui.computeButton.hide()
     window.ui.editTeethContourButton.show()
 
 def edit_teeth_contours(self):

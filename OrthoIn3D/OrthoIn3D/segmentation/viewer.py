@@ -25,6 +25,7 @@ def get_cusps_gui(ren, inter, polydata, thedict):
     
     global picker
     picker = vtk.vtkCellPicker()
+    #picker.HighlightProp(None)
 
     oscillation = [False]
     pickingSphereCoords = []
@@ -119,6 +120,7 @@ def get_cusps_gui(ren, inter, polydata, thedict):
     #iren = vtk.vtkRenderWindowInteractor()
     #iren.SetRenderWindow(renWin)
     inter.SetPicker(picker)
+    
     #self.inter.SetPicker(self.picker)
     
     ren.AddActor(actor)
