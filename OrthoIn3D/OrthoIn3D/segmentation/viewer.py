@@ -61,10 +61,10 @@ def get_cusps_gui(ren, inter, polydata, thedict):
             tooth_dict[teethDictKeyStr].update(radius_dict)
             tooth_dict[teethDictKeyStr].update(toothDiamSphere_dict)
             teeth_dict.update(tooth_dict)
-            thedict["pickedPoints"].update(teeth_dict)
+            thedict.jisonStruct["pickedPoints"].update(teeth_dict)
                               
-            #print("Content of data_dict : ")
-            #for (key, value) in thedict.items() :
+            #print("Content of thedict : ")
+            #for (key, value) in thedict.jisonStruct.items() :
             #    print(key , " :: ", value )
                            
             #print(coords_dict)
@@ -174,28 +174,7 @@ def get_cusps(polydata):
     
     picker.AddObserver("EndPickEvent", annotatePick) 
     print("point picked")
-    mapper = vtk.vtkPolyDataMapper()
-    mapper.SetInputConnection(polydata.GetOutputPort())
-    mapper.ScalarVisibilityOff()
-  
-    actor = vtk.vtkActor()
-    actor.SetMapper(mapper)
-    actor.GetProperty().SetColor(1.0,1.0,1.0)
-    
-    ren = vtk.vtkRenderer()
-    renWin = vtk.vtkRenderWindow()
-    renWin.AddRenderer(ren)
-    
-    iren = vtk.vtkRenderWindowInteractor()
-    iren.SetRenderWindow(renWin)
     iren.SetPicker(picker)
-    #self.inter.SetPicker(self.picker)
-    
-    ren.AddActor(actor)
-    
-    iren.Initialize()
-    renWin.Render()
-    iren.Start()
     
     return clicked_0,clicked_1
     

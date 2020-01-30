@@ -141,6 +141,6 @@ def cut(polydata, shift=-5.5): #5.5):
     max_dist_gingiva = 0.5
     gencives = list(np.where(dists < max_dist_gingiva)[0])
     
-    return id_filter,gencives
+    return id_filter, gencives
     
     

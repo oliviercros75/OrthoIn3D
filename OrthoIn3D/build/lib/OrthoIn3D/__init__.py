@@ -8,16 +8,20 @@ from .segmentation.cut import cut
 from .segmentation.field import add_brush
 from .segmentation.field import add_field
 from .segmentation.field import add_field_gui
+from .segmentation.field import restore_original_polydata_scalars_gui
+from .segmentation.field import remove_field_gui
 from .segmentation.field import mean_vertex
 from .segmentation.field import veclen
 from .segmentation.field import compute_laplacian
 from .segmentation.field import scipy_splu
 from .segmentation.field import compute_field
+from .segmentation.field import compute_field_gui
 from .segmentation.field import save_stl_old
 from .segmentation.field import generate_gengiva
 from .segmentation.field import upsample_line
 from .segmentation.field import dist_poly2point
 from .segmentation.field import save_stl
+from .segmentation.field import save_stl_nospline
 
 from .segmentation.viewer import get_cusps
 from .segmentation.viewer import get_cusps_gui
@@ -29,4 +33,4 @@ from .segmentation.viewer import select_spline_gui
 
 
 def show_version():
-    print('Version: 0.3.5')
+    print('Version: 0.3.8')

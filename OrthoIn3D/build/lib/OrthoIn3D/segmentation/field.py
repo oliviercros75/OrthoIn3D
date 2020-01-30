@@ -47,16 +47,51 @@ def add_field(polydata,field,name=None):
     polydata.GetOutput().GetPointData().SetScalars(vtk_field)
     return polydata
 
-def add_field_gui(self, polydata, field, name=None):
+def add_field_gui(polydata, field, name=None):
     """
     Add a numpy field to a VTK polydata.
     Return the polydata with the field.
     """
     vtk_field = nps.numpy_to_vtk(field)
+    #polydata.Update()
+    #original_scalar = polydata.GetOutput().GetPointData().GetScalars()
+    #print(original_scalar)
+    #srange = polydata.GetOutput().GetScalarRange()
+    #print("Range", srange)
+    scalar_data = polydata.GetOutput().GetPointData().GetScalars()
+    n_cells = polydata.GetOutput().GetNumberOfCells()
+    # Initializing an array with the right shape
+    global original_scalar_cell_data
+    original_scalar_cell_data = np.zeros(n_cells)
+
+    # Iterating through the triangles and getting the corresponding scalar value
+    for i in range(n_cells):
+        cell = polydata.GetOutput().GetCell(i)
+        points = cell.GetPoints()    
+        np_pts = np.array([points.GetPoint(i) for i in range(points.GetNumberOfPoints())])
+        centroid = np_pts.mean(axis=0)
+        centroid_id = polydata.GetOutput().FindPoint(centroid)
+        value = scalar_data.GetValue(centroid_id)
+        original_scalar_cell_data[i] = value
+    #print(original_scalar_cell_data)
+    
     if name:
         vtk_field.SetName(name)
     polydata.GetOutput().GetPointData().SetScalars(vtk_field)
     return polydata
+
+def restore_original_polydata_scalars_gui(polydata, original_scalar_cell_data):
+    """
+    Add a numpy field to a VTK polydata.
+    Return the polydata with the field.
+    """
+    #vtk_field = nps.numpy_to_vtk(field)
+    #if name:
+    #    vtk_field.SetName(name)
+    #polydata.GetOutput().GetPointData().SetScalars(vtk_field)
+    polydata.GetOutput().GetPointData().SetScalars(original_scalar_cell_data)
+    return polydata
+
 
 def mean_vertex(verts,tris,coef=0):
     """Compute the mean value on the vector verts on the 1-Ring neighbors according to faces polys
@@ -126,7 +161,7 @@ def scipy_splu(A,b):
     K = linalg.splu(A)
     return K.solve(b)
 
-def compute_field_gui(self, cusps_0, cusps_1, gencives, polydata, old_field=[]):
+def compute_field_gui(cusps_0, cusps_1, gencives, polydata, datadict, old_field=[]):
     """
     Compute the Harmonic Field
     cusps_0: numpy array of points' index that have the 0 value, blue teeth
@@ -135,50 +170,51 @@ def compute_field_gui(self, cusps_0, cusps_1, gencives, polydata, old_field=[]):
     polydata: the teeth polydata
     old_field: (N x 1) the old field if you have to recompute it after adding a point to cusps_0, cusps_1 or gencives
     """
-    np_mesh = dsa.WrapDataObject(self.polydata.GetOutput())
+    
+    np_mesh = dsa.WrapDataObject(polydata.GetOutput())
 
     verts = np_mesh.GetPoints()
     polys = np_mesh.GetPolygons()
     polys = polys.reshape((-1,4))[:,1:]
-    curvs = nps.vtk_to_numpy(self.polydata.GetOutput().GetPointData().GetArray("Mean_Curvature"))
+    curvs = nps.vtk_to_numpy(polydata.GetOutput().GetPointData().GetArray("Mean_Curvature"))
 
     fL = 1. #convex weights
     fS = 0.001  #concav weights
-    const = -0.2 # The constant to see if an area is concav or not, usuallt -0.2
+    const = -0.2 # The constant to see if an area is concav or not, usually -0.2
     
     mean_vertex_coef=3
-    
     curvs = mean_vertex(curvs, polys, mean_vertex_coef) #Gaussian mean to reduce isolated points
     concav = curvs < const
 
     L = compute_laplacian(verts,polys,concav,fS,fL)
 
-    cusps = self.cusps_0 + self.cusps_1
-    n=len(cusps)+len(self.gencives)
+    cusps = cusps_0 + cusps_1
+    n=len(cusps)+len(gencives)
     m=len(verts)
     
-    w=1000 #constraint on the selected points
+    w=500 #1000 #constraint on the selected points
     
-    J=cusps + self.gencives
+    J=cusps + gencives
     C_ij = [w]*n
     C = sparse.csr_matrix((C_ij, (J, J)), shape=(m, m))
     M = (L+C).tocsc()
     
     b = np.zeros(m)
     #b[cusps_0] += [0*w]*len(cusps_1) #Inutile ;)
-    b[self.cusps_1] += [1*w]*len(self.cusps_1)
-    b[self.gencives] += [0.5*w]*len(self.gencives)
+    b[cusps_1] += [1*w]*len(cusps_1)
+    b[gencives] += [0.5*w]*len(gencives)
     
-    if self.old_field == []:
-        self.old_field = np.zeros(m)
-    r = b - M * self.old_field
+    if old_field == []:
+        old_field = np.zeros(m)
+    r = b - M * old_field
 
-    field = self.old_field + scipy_splu(M, r)
+    field = old_field + scipy_splu(M, r)
     
     #Pour afficher un joli champ décommenter
-    self.field = 1*((self.field>0.7).astype(np.int8) - (self.field<0.3).astype(np.int8))
-    self.field = self.field.astype(np.int8)
-    return self.field
+    field = 1*((field>0.7).astype(np.int8) - (field<0.3).astype(np.int8))
+    field = field.astype(np.int8)
+    
+    return field
 
 def compute_field(cusps_0, cusps_1, gencives, polydata, old_field=[]):
     """
@@ -460,5 +496,127 @@ def save_stl(polydata,splines_polydata,clicked_0,clicked_1):
     writer.SetInputConnection(gengiva.GetOutputPort())
     writer.Write()
     
+def save_stl_nospline(polydata, splines_polydata, clicked_0,clicked_1):
+    """
+    Cut teeth with the splines and save them as .stl
+    """
     
+    clean = vtk.vtkCleanPolyData()
+    clean.AddInputConnection(polydata.GetOutputPort())
+    clean.Update()
+    
+    triangulate = vtk.vtkTriangleFilter()
+    triangulate.AddInputConnection(clean.GetOutputPort())
+    triangulate.Update()
+    
+    np_mesh = dsa.WrapDataObject(polydata.GetOutput())
+    verts = np_mesh.GetPoints()
+    
+    #splines_polydata = [upsample_line(spline_poly,mult=1) for spline_poly in splines_polydata]
+    
+    selected_polydata = []
+    selected_spline = []
+    #gengiva = vtk.vtkPolyData()
+    #gengiva.DeepCopy(polydata.GetOutput())
+
+    for spline in splines_polydata:
+        if spline.GetNumberOfPoints() > 10:
+            loop = vtk.vtkSelectPolyData()
+            loop.SetInputData(triangulate.GetOutput())
+            loop.SetLoop(spline.GetPoints())
+            loop.GenerateSelectionScalarsOn()
+            loop.SetSelectionModeToSmallestRegion()
+            loop.Update()
+            
+            clip = vtk.vtkClipPolyData()
+            clip.SetInputConnection(loop.GetOutputPort())
+            clip.SetValue(0)
+            clip.InsideOutOn()
+            clip.Update()
+                    
+            selected_polydata.append(clip.GetOutput())
+            #selected_spline.append(spline)
+        else:
+            pass
+
+    for i,poly in enumerate(selected_polydata):
+        if poly.GetNumberOfPoints() == 0:
+            print("error ",i)
+            
+            centerOfMassFilter = vtk.vtkCenterOfMass()
+            centerOfMassFilter.SetInputData(selected_spline[i])
+            centerOfMassFilter.SetUseScalarsAsWeights(False)
+            centerOfMassFilter.Update()
+            
+            center = centerOfMassFilter.GetCenter()
+            
+            cut_teeth_0 = vtk.vtkClipPolyData()
+            cut_teeth_0.SetInputData(polydata.GetOutput())
+            cut_teeth_0.SetValue(-0.7)
+            cut_teeth_0.InsideOutOn()
+            cut_teeth_0.Update()
+            
+            cut_teeth_1 = vtk.vtkClipPolyData()
+            cut_teeth_1.SetInputData(polydata.GetOutput())
+            cut_teeth_1.SetValue(0.7)
+            cut_teeth_1.Update()
+            
+            append = vtk.vtkAppendPolyData()
+            append.AddInputConnection(cut_teeth_0.GetOutputPort())
+            append.AddInputConnection(cut_teeth_1.GetOutputPort())
+            
+            connectivity = vtk.vtkPolyDataConnectivityFilter()
+            connectivity.SetExtractionModeToClosestPointRegion()
+            connectivity.SetInputConnection(append.GetOutputPort())
+            connectivity.SetClosestPoint(*center)
+            connectivity.Update()
+            
+            selected_polydata[i] = connectivity.GetOutput()
+            #selected_spline[i] = None
+    
+    #selected_spline = [selected_spline[i] for i in range(len(selected_polydata)) if selected_polydata[i].GetNumberOfPoints() != 0]
+    #selected_polydata = [poly for poly in selected_polydata if poly.GetNumberOfPoints() != 0]
+
+    for i,p in enumerate(clicked_1):
+        point = verts[p]
+        distance = [dist_poly2point(poly,point) for poly in selected_polydata]
+        nearest = np.argmin(distance)
+
+        writer = vtk.vtkSTLWriter()
+        writer.SetFileName('./data/data_output/teeth_{}.stl'.format(2*i))
+        writer.SetInputData(selected_polydata[nearest])
+        writer.Write()
+        
+        selected_polydata.pop(nearest)
+        #gengiva = generate_gengiva(selected_spline.pop(nearest),gengiva)
+        
+    for i,p in enumerate(clicked_0): 
+        point = verts[p]
+        distance = [dist_poly2point(poly,point) for poly in selected_polydata]
+        nearest = np.argmin(distance)
+
+        
+        writer = vtk.vtkSTLWriter()
+        writer.SetFileName('./data/data_output/teeth_{}.stl'.format(2*i+1))
+        writer.SetInputData(selected_polydata[nearest])
+        writer.Write()
+        
+        selected_polydata.pop(nearest)
+        #gengiva = generate_gengiva(selected_spline.pop(nearest),gengiva)
+    
+    gengiva_0 =  vtk.vtkClipPolyData()
+    gengiva_0.SetInputData(polydata.GetOutput())
+    gengiva_0.SetValue(-0.7)
+    gengiva_0.Update()
+    
+    gengiva =  vtk.vtkClipPolyData()
+    gengiva.SetInputData(gengiva_0.GetOutput())
+    gengiva.SetValue(0.7)
+    gengiva.InsideOutOn()
+    gengiva.Update()
+    
+    writer = vtk.vtkSTLWriter()
+    writer.SetFileName('./data/data_output/gengiva.stl')
+    writer.SetInputConnection(gengiva.GetOutputPort())
+    writer.Write()    
     
